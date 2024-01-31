@@ -85,7 +85,7 @@ func main() {
 
 # 2. 테스트
 
-```http
+```http request
 ### 생성
 ### 생성
 < {%
