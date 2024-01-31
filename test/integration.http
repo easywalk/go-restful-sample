@@ -1,0 +1,119 @@
+### 생성
+< {%
+    client.global.clearAll()
+    request.variables.clearAll()
+    request.variables.set("base_name", "test");
+%}
+POST localhost:8080/files
+Content-Type: application/json
+
+{
+    "name": "{{base_name}}-{{$uuid}}",
+    "size": 100,
+    "type": "image/jpeg"
+}
+> {%
+    client.test("Status code is 200", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.body.ID !== "", "Response body ID is empty");
+
+        client.global.set("id", response.body.id);
+        client.global.set("name", response.body.name);
+        client.global.set("size", response.body.size);
+        client.global.set("type", response.body.type);
+    });
+%}
+
+### 생성 검증
+GET localhost:8080/files/{{id}}
+Content-Type: application/json
+
+> {%
+    client.test("Status code is 200", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.body.name === client.global.get("name"), "Response body Name is not same :" + response.body.name + " : " + client.global.get("name"));
+        client.assert(response.body.size == client.global.get("size"), "Response body Size is not same :" + response.body.size + " : " + client.global.get("size"));
+        client.assert(response.body.type === client.global.get("type"), "Response body Type is not same :" + response.body.type + " : " + client.global.get("type"));
+    });
+%}
+
+
+### 재생성 (실패 - 이름 중복)
+POST localhost:8080/files
+Content-Type: application/json
+
+{
+    "name": "{{name}}"
+}
+> {%
+    client.test("Status code is 500", function () {
+        client.assert(response.status === 500, "Response status is not 200");
+    });
+%}
+
+### 이름 수정
+PATCH localhost:8080/files/{{id}}
+Content-Type: application/json
+
+{
+    "name": "{{base_name}}-{{$uuid}}"
+}
+
+> {%
+    client.test("Status code is 200", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.body.id === client.global.get("id"), "Response body ID is not same :" + response.body.ID + " : " + client.global.get("id"));
+        client.assert(response.body.name !== client.global.get("name"), "Response body Name is not same :" + response.body.name + " : " + client.global.get("name"));
+        client.assert(response.body.size == client.global.get("size"), "Response body Size is not same :" + response.body.size + " : " + client.global.get("size"));
+        client.assert(response.body.type === client.global.get("type"), "Response body Type is not same :" + response.body.type + " : " + client.global.get("type"));
+
+        client.global.set("id", response.body.id);
+        client.global.set("name", response.body.name);
+        client.global.set("size", response.body.size);
+        client.global.set("type", response.body.type);
+    });
+%}
+
+### 이름 수정 검증
+GET localhost:8080/files/{{id}}
+Content-Type: application/json
+
+> {%
+    client.test("Status code is 200", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+        client.assert(response.body.id === client.global.get("id"), "Response body ID is not same :" + response.body.ID + " : " + client.global.get("id"));
+        client.assert(response.body.name === client.global.get("name"), "Response body Name is not same :" + response.body.name + " : " + client.global.get("name"));
+        client.assert(response.body.size == client.global.get("size"), "Response body Size is not same :" + response.body.size + " : " + client.global.get("size"));
+        client.assert(response.body.type === client.global.get("type"), "Response body Type is not same :" + response.body.type + " : " + client.global.get("type"));
+    });
+%}
+
+### 삭제
+DELETE localhost:8080/files/{{id}}
+Content-Type: application/json
+
+> {%
+    client.test("Status code is 204", function () {
+        client.assert(response.status === 204, "Response status is not 204" + response.status);
+    });
+%}
+
+### 없는 것 또 삭제 (idempotent)
+DELETE localhost:8080/files/{{id}}
+Content-Type: application/json
+
+> {%
+    client.test("Status code is 204", function () {
+        client.assert(response.status === 204, "Response status is not 204" + response.status);
+    });
+%}
+
+### 삭제 검증
+GET localhost:8080/files/{{id}}
+Content-Type: application/json
+
+> {%
+    client.test("Status code is 204", function () {
+        client.assert(response.status === 204, "Response status is not 404" + response.status);
+    });
+%}
