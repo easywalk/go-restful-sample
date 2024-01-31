@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"log"
 )
 
 func main() {
@@ -20,15 +21,15 @@ func main() {
 		panic("Failed to connect to database: " + err.Error())
 	}
 
+	r := gin.Default()
+	group := r.Group("/files")
 	// create File Service
 	repo := repository.NewSimplyRepository[*model.File](db)
 	svc := service.NewGenericService[*model.File](repo)
-
-	// Gin router
-	r := gin.Default()
-	group := r.Group("/files")
-
-	handler.NewHandler[*model.File](group, svc)
+	hdlr := handler.NewHandler[*model.File](group, svc)
+	if hdlr != nil {
+		log.Println("Success to create File Handler")
+	}
 
 	r.Run() // listen and serve on
 }

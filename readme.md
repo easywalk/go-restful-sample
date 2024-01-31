@@ -21,7 +21,7 @@ go get -u github.com/gin-gonic/gin
 go get -u gorm.io/gorm
 go get -u gorm.io/driver/postgres
 go get -u github.com/lib/pq
-go get -u github.com/easywalk/go-restful@v1.0.8
+go get -u github.com/easywalk/go-restful
 ```
 
 # 1. file-api 구현
@@ -69,15 +69,15 @@ func main() {
         panic("Failed to connect to database: " + err.Error())
     }
     
+    r := gin.Default()
+    group := r.Group("/files")
     // create File Service
     repo := repository.NewSimplyRepository[*model.File](db)
     svc := service.NewGenericService[*model.File](repo)
-    
-    // Gin router
-    r := gin.Default()
-    group := r.Group("/files")
-    
-    handler.NewHandler[*model.File](group, svc)
+    hdlr := handler.NewHandler[*model.File](group, svc)
+    if hdlr != nil {
+        log.Println("Success to create File Handler")
+    }
     
     r.Run() // listen and serve on
 }
